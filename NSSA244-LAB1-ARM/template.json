@@ -101,6 +101,28 @@
                         }
                     }
                 ],
+                "inboundNatRules": [
+                    {
+                        "name": "SSH-WEB1",
+                        "properties": {
+                            "frontendIPConfiguration": { "id": "[resourceId('Microsoft.Network/loadBalancers/frontendIPConfigurations', 'WEB-LoadBalancer', 'LoadBalancerFrontend')]" },
+                            "protocol": "Tcp",
+                            "frontendPort": 50001,
+                            "backendPort": 22,
+                            "enableFloatingIP": false
+                        }
+                    },
+                    {
+                        "name": "SSH-WEB2",
+                        "properties": {
+                            "frontendIPConfiguration": { "id": "[resourceId('Microsoft.Network/loadBalancers/frontendIPConfigurations', 'WEB-LoadBalancer', 'LoadBalancerFrontend')]" },
+                            "protocol": "Tcp",
+                            "frontendPort": 50002,
+                            "backendPort": 22,
+                            "enableFloatingIP": false
+                        }
+                    }
+                ],
                 "probes": [
                     {
                         "name": "HTTP-Probe",
@@ -133,6 +155,9 @@
                         "privateIPAllocationMethod": "Dynamic",
                         "loadBalancerBackendAddressPools": [
                             { "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', 'WEB-LoadBalancer', 'WebBackendPool')]" }
+                        ],
+                        "loadBalancerInboundNatRules": [
+                            { "id": "[resourceId('Microsoft.Network/loadBalancers/inboundNatRules', 'WEB-LoadBalancer', 'SSH-WEB1')]" }
                         ]
                     }
                 } ],
@@ -157,6 +182,9 @@
                         "privateIPAllocationMethod": "Dynamic",
                         "loadBalancerBackendAddressPools": [
                             { "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', 'WEB-LoadBalancer', 'WebBackendPool')]" }
+                        ],
+                        "loadBalancerInboundNatRules": [
+                            { "id": "[resourceId('Microsoft.Network/loadBalancers/inboundNatRules', 'WEB-LoadBalancer', 'SSH-WEB2')]" }
                         ]
                     }
                 } ],
@@ -211,6 +239,42 @@
                     "linuxConfiguration": { "disablePasswordAuthentication": true, "ssh": { "publicKeys": [ { "path": "/home/azureuser/.ssh/authorized_keys", "keyData": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDKT67quSPxlSXgVuTmEaakzqM4XmJlMHDO5dE1buDgVh01rrAl8YEiNPT9JjWtURitdUMYmUUouaTGhLtUFr+7zxv2Wz5+lXD4hZryn9rvAQU/AlFTo9+MfWNwmuoqJ1P0zLT9+symRdg+j4xhyhmq7QitCZ3Cn+gY7RUdNW18WLprn6xfRb3YNvtWPDXdQJBv5dOldSVG9dJtTMd/wQpfrBkleoURH3LMJcuBd84sTmy0t+MMm7Zv1VaEs3Ny75u2yHpDdQa8pfCnf8nbh9GsuG552pdVUt0g3I+fI1WlhYIYDgNEup+O4bWSR3HgoamME5ZYq6Cwmu6hod4aBF67Ozhb+gz6gNYP5BF5LKMrbvlxCd4aWdT8mWdcxumo9/LkHa2oMvQkoK53XjCiBaSlxR/F2j9IuU83FwyiLlUG7h5CRrIXT3Jbx5YbKQCnaA0KQh94GzM6IBnATY0eZ8TsyvrgtKUe3xX/GadB7/o4OMbZqD4m44tfnPRq1K2mYcE= generated-by-azure" } ] } }
                 },
                 "networkProfile": { "networkInterfaces": [ { "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_web2_nic_name'))]" } ] }
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "apiVersion": "2025-04-01",
+            "name": "[concat(parameters('virtualMachines_WEB1_name'), '/install-apache')]",
+            "location": "eastus2",
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_WEB1_name'))]"
+            ],
+            "properties": {
+                "publisher": "Microsoft.Azure.Extensions",
+                "type": "CustomScript",
+                "typeHandlerVersion": "2.1",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                    "commandToExecute": "sudo apt-get update && sudo apt-get install -y apache2 && echo '<h1>Hello from WEB1</h1>' | sudo tee /var/www/html/index.html"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "apiVersion": "2025-04-01",
+            "name": "[concat(parameters('virtualMachines_WEB2_name'), '/install-apache')]",
+            "location": "eastus2",
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_WEB2_name'))]"
+            ],
+            "properties": {
+                "publisher": "Microsoft.Azure.Extensions",
+                "type": "CustomScript",
+                "typeHandlerVersion": "2.1",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                    "commandToExecute": "sudo apt-get update && sudo apt-get install -y apache2 && echo '<h1>Hello from WEB2</h1>' | sudo tee /var/www/html/index.html"
+                }
             }
         }
     ]
